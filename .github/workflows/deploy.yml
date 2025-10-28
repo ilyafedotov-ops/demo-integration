@@ -1,0 +1,133 @@
+# GitHub Actions CI/CD Pipeline for D365 Demo
+# This workflow builds and deploys the Azure Functions and infrastructure
+
+name: Deploy D365 Integration Demo
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_WEBAPP_NAME: d365demo-func-${{ github.run_number }}
+  AZURE_RESOURCE_GROUP: rg-d365-demo-ci
+  AZURE_LOCATION: westeurope
+  RESOURCE_PREFIX: d365demo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Azure CLI
+      uses: azure/setup-az-cli@v3
+      with:
+        version: 'latest'
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Set subscription
+      run: |
+        az account set --subscription 9019cfb1-cb52-4c48-a0a8-727ad3933f34
+
+    - name: Create resource group
+      run: |
+        az group create --name ${{ env.AZURE_RESOURCE_GROUP }} --location ${{ env.AZURE_LOCATION }}
+
+    - name: Deploy infrastructure
+      run: |
+        az deployment group create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --template-file infra/00-foundation.bicep \
+          --parameters prefix=${{ env.RESOURCE_PREFIX }}
+
+    - name: Package Functions
+      run: |
+        cd functions
+        zip -r ../functionapp.zip . -x "*.git*" "*.DS_Store*"
+
+    - name: Deploy Functions
+      run: |
+        FUNC_NAME=$(az deployment group show \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name 00-foundation \
+          --query properties.outputs.funcName.value -o tsv)
+        
+        az functionapp deployment source config-zip \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name $FUNC_NAME \
+          --src functionapp.zip
+
+    - name: Deploy Logic App
+      run: |
+        FUNC_NAME=$(az deployment group show \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name 00-foundation \
+          --query properties.outputs.funcName.value -o tsv)
+        FUNC_HOST=$(az deployment group show \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name 00-foundation \
+          --query properties.outputs.funcHostName.value -o tsv)
+        FUNC_KEY=$(az functionapp keys list \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name $FUNC_NAME \
+          --query functionKeys.default -o tsv)
+        
+        az deployment group create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --template-file infra/10-logicapp.bicep \
+          --parameters \
+            prefix=${{ env.RESOURCE_PREFIX }} \
+            functionBaseUrl="https://$FUNC_HOST" \
+            functionKey="$FUNC_KEY" \
+            d365HostUrl="${{ secrets.D365_HOST_URL }}" \
+            d365AccessToken="${{ secrets.D365_ACCESS_TOKEN }}"
+
+    - name: Deploy APIM
+      run: |
+        APIM_NAME=$(az deployment group show \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name 00-foundation \
+          --query properties.outputs.apimName.value -o tsv)
+        FUNC_HOST=$(az deployment group show \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name 00-foundation \
+          --query properties.outputs.funcHostName.value -o tsv)
+        FUNC_KEY=$(az functionapp keys list \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name $(az deployment group show \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name 00-foundation \
+            --query properties.outputs.funcName.value -o tsv) \
+          --query functionKeys.default -o tsv)
+        
+        az deployment group create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --template-file infra/20-apim.bicep \
+          --parameters \
+            apimName=$APIM_NAME \
+            functionHostname=$FUNC_HOST \
+            functionKey="$FUNC_KEY" \
+            openIdConfigUrl="https://login.microsoftonline.com/DE353337165/v2.0/.well-known/openid-configuration" \
+            audience="api://${{ secrets.APP_REGISTRATION_CLIENT_ID }}"
+
+    - name: Run smoke tests
+      run: |
+        echo "Smoke tests would go here"
+        echo "1. Test Logic App endpoint"
+        echo "2. Test APIM endpoint with JWT"
+        echo "3. Verify Service Bus queue"
+        echo "4. Check ADLS Gen2 data landing"
+
+    - name: Cleanup on failure
+      if: failure()
+      run: |
+        echo "Cleaning up resources on failure..."
+        az group delete --name ${{ env.AZURE_RESOURCE_GROUP }} --yes --no-wait

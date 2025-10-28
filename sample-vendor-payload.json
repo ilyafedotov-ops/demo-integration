@@ -1,0 +1,16 @@
+# Sample Vendor Payload for Testing
+# Use this JSON payload to test the Logic App and APIM endpoints
+
+{
+  "VendorAccount": "V-100045",
+  "Name": "Contoso Supplies GmbH",
+  "Currency": "EUR",
+  "CountryRegionId": "DE",
+  "Address": {
+    "Street": "Musterstrasse 12",
+    "City": "Ulm",
+    "PostalCode": "89073"
+  },
+  "Email": "ap@contoso-supplies.de",
+  "Phone": "+49 731 555123"
+}

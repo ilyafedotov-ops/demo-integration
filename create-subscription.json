@@ -1,0 +1,7 @@
+{
+  "properties": {
+    "displayName": "Demo Test Subscription",
+    "scope": "/subscriptions/9019cfb1-cb52-4c48-a0a8-727ad3933f34/resourceGroups/rg-d365-demo-v2/providers/Microsoft.ApiManagement/service/demo-apim-nfittwqa7bkom/products/d365-demo",
+    "state": "active"
+  }
+}

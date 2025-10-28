@@ -1,0 +1,123 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "functionBaseUrl": {
+      "type": "string",
+      "defaultValue": "https://<YOUR-FUNCTION-APP>.azurewebsites.net"
+    },
+    "functionKey": {
+      "type": "securestring",
+      "defaultValue": "<FUNCTION-KEY>"
+    },
+    "d365HostUrl": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "d365AccessToken": {
+      "type": "securestring",
+      "defaultValue": ""
+    }
+  },
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "method": "POST",
+        "schema": {
+          "type": "object",
+          "required": [ "VendorAccount", "Name", "Currency", "CountryRegionId" ],
+          "properties": {
+            "VendorAccount": { "type": "string" },
+            "Name": { "type": "string" },
+            "Currency": { "type": "string" },
+            "CountryRegionId": { "type": "string" },
+            "Address": {
+              "type": "object",
+              "properties": {
+                "Street": { "type": "string" },
+                "City": { "type": "string" },
+                "PostalCode": { "type": "string" }
+              }
+            },
+            "Email": { "type": "string" },
+            "Phone": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Parse_JSON": {
+      "type": "ParseJson",
+      "inputs": {
+        "content": "@triggerBody()",
+        "schema": "@trigger()['inputs']['schema']"
+      },
+      "runAfter": {}
+    },
+    "Enrich_Message": {
+      "type": "Compose",
+      "inputs": {
+        "type": "vendor",
+        "version": "1.0",
+        "data": "@body('Parse_JSON')",
+        "meta": {
+          "source": "logicapp",
+          "receivedAtUtc": "@utcNow()",
+          "messageId": "@guid()"
+        }
+      },
+      "runAfter": {
+        "Parse_JSON": [ "Succeeded" ]
+      }
+    },
+    "Call_D365_OData": {
+      "type": "Http",
+      "runAfter": {
+        "Enrich_Message": [ "Succeeded" ]
+      },
+      "inputs": {
+        "method": "POST",
+        "uri": "@{if(empty(parameters('d365HostUrl')), 'https://mock-d365-endpoint.com/data/Vendors', concat(parameters('d365HostUrl'), '/data/Vendors'))}",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "@{if(empty(parameters('d365AccessToken')), 'Bearer mock-token', concat('Bearer ', parameters('d365AccessToken')))}"
+        },
+        "body": "@body('Parse_JSON')"
+      },
+      "runAfter": {
+        "Enrich_Message": [ "Succeeded" ]
+      }
+    },
+    "Send_to_Function_HttpIngest": {
+      "type": "Http",
+      "inputs": {
+        "method": "POST",
+        "uri": "@{concat(parameters('functionBaseUrl'), '/api/HttpIngest?code=', parameters('functionKey'))}",
+        "headers": { "Content-Type": "application/json" },
+        "body": "@outputs('Enrich_Message')",
+        "timeout": "PT30S"
+      },
+      "runAfter": {
+        "Call_D365_OData": [ "Succeeded", "Failed" ]
+      }
+    },
+    "Response_202": {
+      "type": "Response",
+      "kind": "Http",
+      "inputs": {
+        "statusCode": 202,
+        "body": {
+          "enqueued": true,
+          "id": "@outputs('Enrich_Message')?['meta']?['messageId']"
+        }
+      },
+      "runAfter": {
+        "Send_to_Function_HttpIngest": [ "Succeeded" ]
+      }
+    }
+  },
+  "outputs": {}
+}

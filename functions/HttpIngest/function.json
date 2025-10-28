@@ -1,0 +1,20 @@
+{
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "Request",
+      "methods": [ "post" ],
+      "route": "HttpIngest"
+    },
+    { "type": "http", "direction": "out", "name": "Response" },
+    {
+      "type": "serviceBus",
+      "direction": "out",
+      "name": "sbOut",
+      "queueName": "inbound",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

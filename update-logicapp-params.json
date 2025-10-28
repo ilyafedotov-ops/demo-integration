@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "parameters": {
+      "functionBaseUrl": {
+        "value": "https://demo-func-nfittwqa7bkom.azurewebsites.net"
+      },
+      "functionKey": {
+        "value": "YOUR_FUNCTION_KEY_HERE"
+      },
+      "d365HostUrl": {
+        "value": ""
+      },
+      "d365AccessToken": {
+        "value": ""
+      }
+    }
+  }
+}
