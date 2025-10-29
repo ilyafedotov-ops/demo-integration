@@ -553,9 +553,9 @@ graph TB
     
     subgraph "Secret Management"
         KV3[Key Vault<br/>RBAC Authorization]
-        Secret1[Secret: d365-token]
-        Secret2[Secret: function-key]
-        Secret3[Named Value: func_key]
+        KVSecret1[Key Vault Secret:<br/>d365-token]
+        KVSecret2[Key Vault Secret:<br/>function-key]
+        KVSecret3[Named Value:<br/>func_key]
     end
     
     subgraph "Network Security"
@@ -591,9 +591,9 @@ graph TB
     AAD2 --> MI2
     MI2 --> RBAC2
     
-    KV3 --> Secret1
-    KV3 --> Secret2
-    KV3 --> Secret3
+    KV3 --> KVSecret1
+    KV3 --> KVSecret2
+    KV3 --> KVSecret3
     
     RBAC2 --> Role1
     RBAC2 --> Role2
