@@ -1,3 +1,8 @@
 SETUP_APP_REGISTRATION.md
 function-logs/deployments/
 function-logs/LogFiles/
+
+# Environment variables and secrets
+.env
+.env.local
+*.env
