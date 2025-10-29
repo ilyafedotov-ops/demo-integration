@@ -6,3 +6,7 @@ function-logs/LogFiles/
 .env
 .env.local
 *.env
+
+# Project-specific files
+Initial.txt
+repositorylayout.txt
