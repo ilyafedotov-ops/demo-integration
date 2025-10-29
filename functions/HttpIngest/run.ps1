@@ -42,7 +42,18 @@ if(-not $payload.meta){
 }
 
 # -- Enqueue to Service Bus
+Write-Host "============================================"
+Write-Host "SENDING TO SERVICE BUS"
+Write-Host "============================================"
+Write-Host "Payload object type: $($payload.GetType().FullName)"
+Write-Host "Payload: $($payload | ConvertTo-Json -Depth 3 -Compress)"
+
 $sbMessage = $payload | ConvertTo-Json -Depth 20
+Write-Host "Service Bus message type: $($sbMessage.GetType().FullName)"
+Write-Host "Service Bus message length: $($sbMessage.Length) chars"
+Write-Host "Service Bus message preview: $($sbMessage.Substring(0, [Math]::Min(200, $sbMessage.Length)))"
+Write-Host "============================================"
+
 Push-OutputBinding -Name sbOut -Value $sbMessage
 
 # -- 202 Accepted
@@ -54,3 +65,5 @@ $resp = [HttpResponseContext]@{
   }
 }
 Push-OutputBinding -Name Response -Value $resp
+
+Write-Host "Response sent: 202 Accepted, ID: $($payload.meta.messageId)"
