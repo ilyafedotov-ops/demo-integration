@@ -1,0 +1,22 @@
+{
+  "type": "vendor",
+  "version": "1.0",
+  "data": {
+    "Email": "ap@contoso-supplies.de",
+    "Name": "Contoso Supplies GmbH",
+    "CountryRegionId": "DE",
+    "Currency": "EUR",
+    "VendorAccount": "V-100045",
+    "Address": {
+      "PostalCode": "89073",
+      "Street": "Musterstrasse 12",
+      "City": "Ulm"
+    },
+    "Phone": "+49 731 555123"
+  },
+  "meta": {
+    "source": "function-http",
+    "receivedAtUtc": "2025-10-28T17:16:04.8117844Z",
+    "messageId": "d1462275-b43d-40f0-aea1-523e663014a0"
+  }
+}
