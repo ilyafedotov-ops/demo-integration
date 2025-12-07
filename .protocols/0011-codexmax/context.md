@@ -1,0 +1,7 @@
+- **Current Step**: 0
+- **Status**: Not Started
+- **Last Action Summary**: "Plan generated, awaiting approval."
+- **Next Action**: "Start Step 0 (see `00-setup.md`)."
+- **Git**: "Branch 0011-codexmax created, empty."
+- **PROJECT_ROOT**: "/home/ilya/Documents/dev-pipeline/Projects/github.com/ilyafedotov-ops/demo-integration"
+- **CWD**: "/home/ilya/Documents/dev-pipeline/Projects/github.com/ilyafedotov-ops/worktrees/0011-codexmax"
